@@ -70,10 +70,29 @@ def get_mock_rate(symbol):
         'prev_close': round(state['prev_close'], 2)
     }
 
+# In-memory cache for market rates to prevent excessive scraping / rate limits
+MARKET_CACHE = {
+    'last_fetched': 0,
+    'data': None
+}
+CACHE_DURATION = 30  # seconds (cache duration)
+
 
 @app.route('/api/market-rates')
 def get_market_rates():
+    global MARKET_CACHE
     current_time = time.time()
+    
+    # Check cache first
+    if MARKET_CACHE['data'] and (current_time - MARKET_CACHE['last_fetched'] < CACHE_DURATION):
+        cached_data = MARKET_CACHE['data'].copy()
+        cached_data['cache_hit'] = True
+        return app.response_class(
+            response=json.dumps(cached_data),
+            status=200,
+            mimetype='application/json'
+        )
+        
     rates = {}
     is_mock = False
     
@@ -140,8 +159,13 @@ def get_market_rates():
     response_data = {
         'timestamp': current_time,
         'is_mock': is_mock,
-        'rates': rates
+        'rates': rates,
+        'cache_hit': False
     }
+    
+    # Update cache
+    MARKET_CACHE['last_fetched'] = current_time
+    MARKET_CACHE['data'] = response_data
     
     return app.response_class(
         response=json.dumps(response_data),
