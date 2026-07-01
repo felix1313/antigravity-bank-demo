@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 justify-items-center">
+                <div class="flex items-center">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center">
+                        <span class="text-2xl font-bold text-blue-600 tracking-tight">αg</span>
+                        <span class="ml-2 text-lg font-semibold text-slate-950">Antigravity Bank</span>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-sm text-slate-500 mr-4">Welcome back,</span>
+                    <span class="text-sm font-medium text-slate-900">{{ account.owner }}</span>
+                    <div class="ml-4 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
+                        VR
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            
+            <!-- Left Column: Balances -->
+            <div class="space-y-6 lg:col-span-2">
+                <h2 class="text-xl font-bold text-slate-900">Account Overview</h2>
+                
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                    <!-- Checking -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg border border-slate-200">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-blue-500 rounded-md p-3 text-white">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-slate-500 truncate">Checking Account</dt>
+                                        <dd class="text-lg font-bold text-slate-900">{{ account.checking_balance }}</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Savings -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg border border-slate-200">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-green-500 rounded-md p-3 text-white">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-slate-500 truncate">Savings Account</dt>
+                                        <dd class="text-lg font-bold text-slate-900">{{ account.savings_balance }}</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Credit Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg border border-slate-200">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-purple-500 rounded-md p-3 text-white">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-slate-500 truncate">Credit Card</dt>
+                                        <dd class="text-lg font-bold text-slate-900">{{ account.credit_card_balance }}</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="bg-white shadow rounded-lg border border-slate-200">
+                    <div class="px-5 py-4 border-b border-slate-200">
+                        <h3 class="text-lg font-medium leading-6 text-slate-900">Recent Transactions</h3>
+                    </div>
+                    <ul class="divide-y divide-slate-200">
+                        {% for tx in transactions %}
+                        <li class="px-5 py-4 hover:bg-slate-50 transition-colors">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="mr-4 h-10 w-10 rounded-full flex items-center justify-center 
+                                        {% if tx.type == 'credit' %} bg-green-100 text-green-600 {% else %} bg-slate-100 text-slate-600 {% endif %}">
+                                        {% if tx.type == 'credit' %}
+                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        {% else %}
+                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                        </svg>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-900">{{ tx.description }}</p>
+                                        <p class="text-xs text-slate-500">{{ tx.date }} &bull; {{ tx.category }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-sm font-bold {% if tx.type == 'credit' %} text-green-600 {% else %} text-slate-900 {% endif %}">
+                                    {{ tx.amount }}
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: Sidebar / Market Watch Placeholder -->
+            <div class="space-y-6">
+                <h2 class="text-xl font-bold text-slate-900">Market Watch</h2>
+                
+                <!-- Stock Ticker Card (Placeholder) -->
+                <div class="bg-white shadow rounded-lg border border-slate-200 p-6 flex flex-col justify-between min-h-[250px]">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-medium text-slate-900">Live Rates</h3>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                Offline
+                            </span>
+                        </div>
+                        <p class="text-sm text-slate-500 mt-1">Real-time stock market updates.</p>
+                    </div>
+                    
+                    <!-- Placeholder Content -->
+                    <div class="my-auto py-8 text-center">
+                        <svg class="mx-auto h-12 w-12 text-slate-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                        <p class="mt-4 text-sm font-medium text-slate-900">No rates loaded</p>
+                        <p class="mt-1 text-xs text-slate-500">Live stock rates will be displayed here once the integration is active.</p>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4 mt-4">
+                        <button disabled class="w-full inline-flex justify-center items-center px-4 py-2 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-400 bg-slate-50 cursor-not-allowed">
+                            Refresh Rates
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <p class="text-xs text-slate-500">&copy; 2026 Antigravity Bank. For demonstration purposes only.</p>
+            <div class="flex space-x-6">
+                <span class="text-xs text-slate-400">v2.0-demo</span>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
