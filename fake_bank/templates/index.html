@@ -140,38 +140,42 @@
                 </div>
             </div>
 
-            <!-- Right Column: Sidebar / Market Watch Placeholder -->
+            <!-- Right Column: Sidebar / Market Watch -->
             <div class="space-y-6">
                 <h2 class="text-xl font-bold text-slate-900">Market Watch</h2>
                 
-                <!-- Stock Ticker Card (Placeholder) -->
-                <div class="bg-white shadow rounded-lg border border-slate-200 p-6 flex flex-col justify-between min-h-[250px]">
+                <!-- Stock Ticker Card -->
+                <div class="bg-white shadow rounded-lg border border-slate-200 p-6 flex flex-col justify-between min-h-[350px]">
                     <div>
                         <div class="flex justify-between items-start">
                             <h3 class="text-lg font-medium text-slate-900">Live Rates</h3>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                                Offline
+                            <span id="market-status" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                Connecting...
                             </span>
                         </div>
-                        <p class="text-sm text-slate-500 mt-1">Real-time stock market updates.</p>
+                        <p class="text-sm text-slate-500 mt-1">Real-time stock market updates (35s interval).</p>
                     </div>
                     
-                    <!-- Placeholder Content -->
-                    <div class="my-auto py-8 text-center">
-                        <svg class="mx-auto h-12 w-12 text-slate-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                        </svg>
-                        <p class="mt-4 text-sm font-medium text-slate-900">No rates loaded</p>
-                        <p class="mt-1 text-xs text-slate-500">Live stock rates will be displayed here once the integration is active.</p>
+                    <!-- Dynamic Stocks List -->
+                    <div id="stocks-container" class="space-y-4 my-4 flex-grow flex flex-col justify-center">
+                        <div class="py-8 text-center" id="stocks-loading">
+                            <svg class="animate-spin mx-auto h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p class="mt-2 text-sm text-slate-500">Fetching live market rates...</p>
+                        </div>
                     </div>
 
                     <div class="border-t border-slate-100 pt-4 mt-4">
-                        <button disabled class="w-full inline-flex justify-center items-center px-4 py-2 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-400 bg-slate-50 cursor-not-allowed">
-                            Refresh Rates
+                        <button id="refresh-button" class="w-full inline-flex justify-center items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                            <span id="refresh-btn-text">Refresh Rates</span>
                         </button>
                     </div>
                 </div>
             </div>
+
 
         </div>
     </main>
@@ -185,6 +189,154 @@
             </div>
         </div>
     </footer>
+
+    <!-- Market Watch Client Script -->
+    <script>
+        // Scaling function to draw premium SVG sparklines
+        function generateSparkline(history, isPositive, index) {
+            const width = 80;
+            const height = 28;
+            const padding = 2;
+            const strokeColor = isPositive ? '#10b981' : '#f43f5e';
+            const gradientId = `sparkline-grad-${index}`;
+
+            if (!history || history.length < 2) {
+                return `
+                    <svg class="h-8 w-20" viewBox="0 0 ${width} ${height}">
+                        <line x1="${padding}" y1="${height / 2}" x2="${width - padding}" y2="${height / 2}" stroke="${strokeColor}" stroke-dasharray="2 2" stroke-width="1.5" />
+                    </svg>
+                `;
+            }
+            
+            const minVal = Math.min(...history);
+            const maxVal = Math.max(...history);
+            const range = maxVal - minVal || 1;
+            
+            const points = history.map((val, i) => {
+                const x = (i / (history.length - 1)) * (width - padding * 2) + padding;
+                const y = height - ((val - minVal) / range) * (height - padding * 2) - padding;
+                return { x, y };
+            });
+            
+            const linePath = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ');
+            const areaPath = `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`;
+            
+            return `
+                <svg class="h-8 w-20" viewBox="0 0 ${width} ${height}">
+                    <defs>
+                        <linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.25"/>
+                            <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="${areaPath}" fill="url(#${gradientId})" />
+                    <path d="${linePath}" fill="none" stroke="${strokeColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            `;
+        }
+
+        async function fetchStocks(forceRefresh = false) {
+            const statusBadge = document.getElementById('market-status');
+            const refreshBtn = document.getElementById('refresh-button');
+            const refreshBtnText = document.getElementById('refresh-btn-text');
+            const container = document.getElementById('stocks-container');
+            const url = forceRefresh ? '/api/stocks?refresh=true' : '/api/stocks';
+
+            if (forceRefresh) {
+                refreshBtn.disabled = true;
+                refreshBtnText.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-700 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Refreshing...
+                `;
+            }
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('API request failed');
+                
+                const stocks = await response.json();
+                
+                // Clear container
+                container.innerHTML = '';
+                container.classList.remove('justify-center'); // Align items from top
+
+                stocks.forEach((stock, idx) => {
+                    const isPositive = stock.change_percent >= 0;
+                    const changeSign = isPositive ? '+' : '';
+                    const changeColorClass = isPositive ? 'text-emerald-700 bg-emerald-50' : 'text-rose-700 bg-rose-50';
+                    const textPriceColorClass = isPositive ? 'text-emerald-600' : 'text-rose-600';
+                    
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-colors duration-150';
+                    row.innerHTML = `
+                        <div class="flex-shrink-0 min-w-[70px]">
+                            <div class="text-sm font-bold text-slate-900 tracking-tight">${stock.symbol}</div>
+                            <div class="text-[10px] text-slate-400 truncate max-w-[85px]" title="${stock.name}">${stock.name}</div>
+                        </div>
+                        <div class="flex-grow px-2 flex justify-center">
+                            ${generateSparkline(stock.history, isPositive, idx)}
+                        </div>
+                        <div class="text-right flex-shrink-0 pl-1">
+                            <div class="text-sm font-semibold text-slate-900">$${stock.price.toFixed(2)}</div>
+                            <span class="inline-block text-[10px] font-bold ${changeColorClass} px-1.5 py-0.5 rounded mt-0.5">
+                                ${changeSign}${stock.change_percent.toFixed(2)}%
+                            </span>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+
+                // Update market status to live
+                statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                statusBadge.innerHTML = `
+                    <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    Live
+                `;
+            } catch (err) {
+                console.error(err);
+                statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800';
+                statusBadge.innerHTML = `
+                    <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+                    Offline
+                `;
+                // Show retry layout if empty
+                if (container.children.length === 0 || document.getElementById('stocks-loading')) {
+                    container.innerHTML = `
+                        <div class="py-6 text-center">
+                            <svg class="mx-auto h-10 w-10 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <p class="mt-2 text-sm font-medium text-slate-900">Failed to load market rates</p>
+                            <p class="text-xs text-slate-500">Please try refreshing the page or rates manual refresh.</p>
+                        </div>
+                    `;
+                }
+            } finally {
+                if (forceRefresh) {
+                    refreshBtn.disabled = false;
+                    refreshBtnText.textContent = 'Refresh Rates';
+                }
+            }
+        }
+
+        // Initialize rates fetch
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchStocks();
+            
+            // Auto-refresh interval of 35 seconds
+            setInterval(() => {
+                fetchStocks();
+            }, 35000);
+
+            // Manual Refresh button trigger
+            document.getElementById('refresh-button').addEventListener('click', () => {
+                fetchStocks(true);
+            });
+        });
+    </script>
 
 </body>
 </html>
